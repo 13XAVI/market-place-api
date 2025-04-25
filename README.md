@@ -2,7 +2,8 @@
 
 ## Overview
 
-Marketplace API provides endpoints to manage users, products, orders, reviews, within an online marketplace. It allows buyers to browse and purchase products, while sellers can list, update, and manage their inventory. The API supports authentication, role-based access,It allows users manage products, place orders, manage their accounts, and perform other related activities
+Marketplace API provides a comprehensive RESTful API for an online marketplace that allows users to buy
+and sell products, manage their inventory and process orders. and perform other related activities
 
 ## Documentation
 
