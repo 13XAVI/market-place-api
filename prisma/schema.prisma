@@ -1,0 +1,122 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Role {
+  id    String @id @default(uuid())
+  name  String @unique
+  users User[]
+}
+
+model User {
+  id             String @id @default(uuid())
+  name           String
+  email          String @unique
+  password       String
+  isEmailVerified Boolean @default(false)
+  verificationToken      String?     
+  verificationTokenExpires DateTime?
+  profile       Profile?       @relation("UserProfile")
+  profileId     String?        @unique
+  isProfileSet   Boolean   @default(false)
+  orders        Order[]        @relation("User_Orders")
+  favorites     Product[]      @relation("User_Favorites")
+  roleId        String         @default(uuid())
+  role          Role           @relation(fields: [roleId], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime @updatedAt
+  Review Review[]
+  Store Store[]
+}
+
+
+model Profile {
+  id        String   @id @default(uuid())
+  user      User     @relation("UserProfile", fields: [userId], references: [id])
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  user      User        @relation("User_Orders", fields: [userId], references: [id])
+  userId    String
+  items     OrderItem[] 
+  total     Float
+  status    String      @default("PENDING")
+  createdAt DateTime    @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  order     Order    @relation(fields: [orderId], references: [id])
+  orderId   String
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  quantity  Int
+  createdAt DateTime @default(now())
+}
+
+
+model Product {
+  id          String      @id @default(uuid())
+  name        String
+  image       String[]
+  price       Float
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id])
+  store       Store?      @relation(fields: [storeId], references: [id])
+  storeId     String?
+  orderItems  OrderItem[]
+  favoritedBy User[]      @relation("User_Favorites")
+  reviews     Review[]
+  isFeatured  Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+
+model Category {
+  id        String     @id @default(uuid())
+  name      String
+  products  Product[]
+  createdAt DateTime   @default(now())
+}
+
+
+model Store {
+  id        String   @id @default(uuid())
+  name      String
+  owner     User     @relation(fields: [ownerId], references: [id])
+  ownerId   String
+  products  Product[]
+  createdAt DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  createdAt DateTime @default(now())
+}
+
+
