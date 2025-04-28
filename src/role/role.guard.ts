@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 
 @Injectable()
-export class RoleGuard implements CanActivate {
+class RoleGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
   canActivate(
     context: ExecutionContext,
@@ -18,3 +18,5 @@ export class RoleGuard implements CanActivate {
     return requiredRoles.includes(user.role);
   }
 }
+
+export { RoleGuard };

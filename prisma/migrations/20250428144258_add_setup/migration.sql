@@ -13,7 +13,10 @@ CREATE TABLE "User" (
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "isEmailVerified" BOOLEAN NOT NULL DEFAULT false,
+    "verificationToken" TEXT,
+    "verificationTokenExpires" TIMESTAMP(3),
     "profileId" TEXT,
+    "isProfileSet" BOOLEAN NOT NULL DEFAULT false,
     "roleId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -73,6 +76,7 @@ CREATE TABLE "Product" (
 CREATE TABLE "Category" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
@@ -101,14 +105,6 @@ CREATE TABLE "Review" (
     CONSTRAINT "Review_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "_User_Favorites" (
-    "A" TEXT NOT NULL,
-    "B" TEXT NOT NULL,
-
-    CONSTRAINT "_User_Favorites_AB_pkey" PRIMARY KEY ("A","B")
-);
-
 -- CreateIndex
 CREATE UNIQUE INDEX "Role_name_key" ON "Role"("name");
 
@@ -122,7 +118,7 @@ CREATE UNIQUE INDEX "User_profileId_key" ON "User"("profileId");
 CREATE UNIQUE INDEX "Profile_userId_key" ON "Profile"("userId");
 
 -- CreateIndex
-CREATE INDEX "_User_Favorites_B_index" ON "_User_Favorites"("B");
+CREATE UNIQUE INDEX "Category_name_key" ON "Category"("name");
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -153,9 +149,3 @@ ALTER TABLE "Review" ADD CONSTRAINT "Review_userId_fkey" FOREIGN KEY ("userId") 
 
 -- AddForeignKey
 ALTER TABLE "Review" ADD CONSTRAINT "Review_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_User_Favorites" ADD CONSTRAINT "_User_Favorites_A_fkey" FOREIGN KEY ("A") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_User_Favorites" ADD CONSTRAINT "_User_Favorites_B_fkey" FOREIGN KEY ("B") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

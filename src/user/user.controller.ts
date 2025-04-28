@@ -6,9 +6,11 @@ import {
   Query,
   Req,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { VerifyDto } from './dto';
+import { VerifyDto } from '../dtos';
 import { RoleGuard } from 'src/role/role.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from 'src/role/role.decorator';
@@ -21,6 +23,7 @@ export class UserController {
   @Get('verify-email')
   @UseGuards(AuthGuard('jwt'), RoleGuard)
   @Roles(ROLES.SHOPPER)
+ @UsePipes(new ValidationPipe({ transform: true }))
   async verifyEmail(@Query('token') verifyDto: VerifyDto) {
     return this.userService.verifyEmail(verifyDto.token);
   }

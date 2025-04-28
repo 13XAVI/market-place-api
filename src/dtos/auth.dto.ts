@@ -1,3 +1,4 @@
+import { Optional } from '@nestjs/common';
 import {
   IsEmail,
   IsNotEmpty,
@@ -22,6 +23,9 @@ export class AuthCredentialsDto {
 }
 
 export class CreateUserDto extends AuthCredentialsDto {
-  @IsString()
+  @IsString({message:"user name is Required"})
   name: string;
+  @IsString({message:"user Role must Be a string"})
+  @Optional()
+  role?: string;
 }
