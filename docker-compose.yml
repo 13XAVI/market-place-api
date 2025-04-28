@@ -1,0 +1,31 @@
+version: '3.8'  # Even if it says obsolete, it's okay, Docker still accepts it
+
+services:
+  db:
+    image: postgres:14
+    restart: always
+    ports:
+      - 5434:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: market_api
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    restart: always
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: market_api
+    depends_on:
+      - db
+    ports:
+      - '3000:5000'
+
+volumes:
+  postgres_data:
