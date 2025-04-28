@@ -94,12 +94,6 @@ export class UserService {
               rating: true,
             },
           },
-          favorites: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
         },
       });
       return {

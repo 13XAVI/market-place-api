@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { AuthCredentialsDto, CreateUserDto } from './dto';
+import { AuthCredentialsDto, CreateUserDto } from '../dtos';
 import * as argon from 'argon2';
 import { CustomError, CustomResponse } from 'src/utils/customClass';
 import { JwtService } from '@nestjs/jwt';
@@ -83,7 +83,7 @@ export class AuthService {
           verificationTokenExpires: verificationTokenExpires,
           role: {
             connect: {
-              name: ROLES.SHOPPER,
+              name: userDto.role || ROLES.SHOPPER,
             },
           },
         },
@@ -100,6 +100,7 @@ export class AuthService {
         error: '',
       };
     } catch (error) {
+      console.log(error, 'Errs');
       if (error instanceof CustomError) {
         throw error;
       }
