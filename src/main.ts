@@ -13,12 +13,12 @@ async function bootstrap() {
     .setVersion('1.0')
     .setContact('Support Team', 'https://example.com', 'support@example.com')
     .setLicense('MIT', 'https://opensource.org/licenses/MIT')
-    .addTag('Product')
     .addTag('Auth')
     .addTag('User')
-    .addTag('orders')
     .addTag('categories')
+    .addTag('Product')
     .addTag('stores')
+    .addTag('orders')
     .addTag('reviews')
     .addBearerAuth(
       {
