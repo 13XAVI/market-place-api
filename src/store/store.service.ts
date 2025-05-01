@@ -22,11 +22,6 @@ export class StoreService implements OnModuleInit {
     await this.producer.connect();
   }
 
-  /**
-   * Creates a new store for a seller.
-   * Only sellers can create stores, and they are set as the owner.
-   * Products can be linked if they are not already associated with another store.
-   */
   async createStore(
     userId: string,
     userRole: string,
@@ -105,9 +100,6 @@ export class StoreService implements OnModuleInit {
     };
   }
 
-  /**
-   * Retrieves a store by its ID, including its products and owner details.
-   */
   async getStoreById(storeId: string): Promise<CustomResponse<Store>> {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
@@ -135,9 +127,6 @@ export class StoreService implements OnModuleInit {
     };
   }
 
-  /**
-   * Retrieves all stores with their products.
-   */
   async getAllStores(): Promise<CustomResponse<Store[]>> {
     const stores = await this.prisma.store.findMany({
       include: {
@@ -160,9 +149,6 @@ export class StoreService implements OnModuleInit {
     };
   }
 
-  /**
-   * Updates a store. Only the owner (seller) or an admin can update it.
-   */
   async updateStore(
     userId: string,
     userRole: string,
@@ -210,10 +196,6 @@ export class StoreService implements OnModuleInit {
     };
   }
 
-  /**
-   * Deletes a store. Only the owner (seller) or an admin can delete it.
-   * Prevents deletion if the store has associated products.
-   */
   async deleteStore(
     userId: string,
     userRole: string,
