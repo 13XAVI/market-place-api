@@ -1,14 +1,14 @@
-const {PrismaClient} =  require("@prisma/client");
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function main() {
   await prisma.role.createMany({
-    data: [{name: "ADMIN"}, {name: "SHOPPER"}, {name: "SELLER"}],
+    data: [{ name: 'ADMIN' }, { name: 'SHOPPER' }, { name: 'SELLER' }],
     skipDuplicates: true,
   });
 
-  console.log("Seeding completed!");
+  console.log('Seeding completed!');
 }
 
 main()

@@ -1,81 +1,74 @@
-// src/store/store.service.ts
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStoreDto, UpdateStoreDto } from '../dtos';
 import { Store } from '@prisma/client';
 import { CustomError, CustomResponse } from '../utils/customClass';
 import { ROLES } from '../utils/enum';
+import { Kafka, Producer } from 'kafkajs';
 
 @Injectable()
-export class StoreService {
-  constructor(private prisma: PrismaService) {}
+export class StoreService implements OnModuleInit {
+  private producer: Producer;
 
+  constructor(private prisma: PrismaService) {
+    const kafka = new Kafka({
+      clientId: 'market-api',
+      brokers: [process.env.KAFKA_BROKERS || 'kafka:9092'],
+    });
+    this.producer = kafka.producer();
+  }
+
+  async onModuleInit() {
+    await this.producer.connect();
+  }
+
+  /**
+   * Creates a new store for a seller.
+   * Only sellers can create stores, and they are set as the owner.
+   * Products can be linked if they are not already associated with another store.
+   */
   async createStore(
     userId: string,
+    userRole: string,
     createStoreDto: CreateStoreDto,
   ): Promise<CustomResponse<Store>> {
-    const { name, productIds } = createStoreDto;
-
-    // Check if user already has a store (optional)
-    const existingStore = await this.prisma.store.findFirst({
-      where: { ownerId: userId },
-    });
-
-    if (existingStore) {
-      throw new CustomError(400, 'User already has a store');
+    if (userRole !== ROLES.SELLER) {
+      throw new CustomError(403, 'Only sellers can create stores');
     }
 
-    // Validate product IDs
+    const { name, productIds } = createStoreDto;
+
     if (productIds && productIds.length > 0) {
       const products = await this.prisma.product.findMany({
-        where: { id: { in: productIds } },
-        select: {
-          id: true,
-          storeId: true,
-          store: { select: { ownerId: true } },
-        },
+        where: { id: { in: productIds }, storeId: null },
+        select: { id: true },
       });
 
       if (products.length !== productIds.length) {
-        throw new CustomError(404, 'One or more products not found');
-      }
-
-      // Check permissions (sellers can only link their own products, admins can link any)
-      for (const product of products) {
-        if (
-          product.storeId &&
-          product.store?.ownerId !== userId &&
-          userId !== ROLES.ADMIN
-        ) {
-          throw new CustomError(
-            403,
-            'You do not have permission to link one or more products',
-          );
-        }
+        throw new CustomError(
+          400,
+          'One or more products are already associated with a store or do not exist',
+        );
       }
     }
 
-
     const store = await this.prisma.$transaction(async (prisma) => {
- 
-      const store = await prisma.store.create({
+      const newStore = await prisma.store.create({
         data: {
           name,
           ownerId: userId,
         },
       });
 
-      // Link products to the store
       if (productIds && productIds.length > 0) {
         await prisma.product.updateMany({
           where: { id: { in: productIds } },
-          data: { storeId: store.id },
+          data: { storeId: newStore.id },
         });
       }
 
-      // Return the store with linked products
       return prisma.store.findUnique({
-        where: { id: store.id },
+        where: { id: newStore.id },
         include: {
           products: {
             select: {
@@ -90,12 +83,31 @@ export class StoreService {
       });
     });
 
+    await this.producer.send({
+      topic: 'store-events',
+      messages: [
+        {
+          key: store?.id,
+          value: JSON.stringify({
+            eventType: 'STORE_CREATED',
+            storeId: store?.id,
+            name: store?.name,
+            ownerId: store?.ownerId,
+            createdAt: store?.createdAt,
+          }),
+        },
+      ],
+    });
+
     return {
-      message: 'Store Successfull Created',
+      message: 'Store Successfully Created',
       data: store,
     };
   }
 
+  /**
+   * Retrieves a store by its ID, including its products and owner details.
+   */
   async getStoreById(storeId: string): Promise<CustomResponse<Store>> {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
@@ -118,13 +130,16 @@ export class StoreService {
     }
 
     return {
-      message: 'Successfully Retrieved Store id',
+      message: 'Successfully Retrieved Store',
       data: store,
     };
   }
 
+  /**
+   * Retrieves all stores with their products.
+   */
   async getAllStores(): Promise<CustomResponse<Store[]>> {
-    const foundStores = await this.prisma.store.findMany({
+    const stores = await this.prisma.store.findMany({
       include: {
         products: {
           select: {
@@ -138,12 +153,16 @@ export class StoreService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
     return {
-      message: 'Successfull retrived',
-      data: foundStores,
+      message: 'Successfully Retrieved All Stores',
+      data: stores,
     };
   }
 
+  /**
+   * Updates a store. Only the owner (seller) or an admin can update it.
+   */
   async updateStore(
     userId: string,
     userRole: string,
@@ -153,15 +172,12 @@ export class StoreService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    const role = await this.prisma.role.findUnique({
-      where: { id: userRole },
-    });
 
     if (!store) {
       throw new NotFoundException('Store not found');
     }
 
-    if (role?.name !== ROLES.ADMIN && store.ownerId !== userId) {
+    if (userRole !== ROLES.ADMIN && store.ownerId !== userId) {
       throw new CustomError(
         403,
         'You do not have permission to update this store',
@@ -173,30 +189,45 @@ export class StoreService {
       data: updateStoreDto,
     });
 
+    await this.producer.send({
+      topic: 'store-events',
+      messages: [
+        {
+          key: storeId,
+          value: JSON.stringify({
+            eventType: 'STORE_UPDATED',
+            storeId,
+            name: updatedStore.name,
+            updatedAt: updatedStore.updatedAt,
+          }),
+        },
+      ],
+    });
+
     return {
       message: 'Store Successfully Updated',
       data: updatedStore,
     };
   }
 
+  /**
+   * Deletes a store. Only the owner (seller) or an admin can delete it.
+   * Prevents deletion if the store has associated products.
+   */
   async deleteStore(
     userId: string,
     userRole: string,
     storeId: string,
   ): Promise<CustomResponse<any>> {
-
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
-    });
-    const Role = await this.prisma.role.findUnique({
-      where: { id: userRole },
     });
 
     if (!store) {
       throw new NotFoundException('Store not found');
     }
 
-    if (Role?.name !== ROLES.ADMIN && store.ownerId !== userId) {
+    if (userRole !== ROLES.ADMIN && store.ownerId !== userId) {
       throw new CustomError(
         403,
         'You do not have permission to delete this store',
@@ -217,9 +248,24 @@ export class StoreService {
     await this.prisma.store.delete({
       where: { id: storeId },
     });
+
+    await this.producer.send({
+      topic: 'store-events',
+      messages: [
+        {
+          key: storeId,
+          value: JSON.stringify({
+            eventType: 'STORE_DELETED',
+            storeId,
+            deletedAt: new Date(),
+          }),
+        },
+      ],
+    });
+
     return {
-      message: 'sucessfull Deleted',
-      data: '',
+      message: 'Store Successfully Deleted',
+      data: null,
     };
   }
 }

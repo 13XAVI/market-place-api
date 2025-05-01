@@ -13,15 +13,31 @@ import { CreateOrderDto, UpdateOrderStatusDto } from '../dtos';
 import { ROLES } from '../utils/enum';
 import { RoleGuard, Roles } from 'src/role';
 import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ErrorResponseDto } from 'src/dtos/errorResponse.dto';
 
 @Controller('orders')
 @UseGuards()
+@ApiTags('orders')
+@ApiBearerAuth('JWT-auth')
+@ApiResponse({
+  status: 400,
+  description: 'Bad Request',
+  type: ErrorResponseDto,
+})
+@ApiResponse({ status: 401, description: 'Unauthorized' })
+@ApiResponse({
+  status: 500,
+  description: 'Internal server error',
+  type: ErrorResponseDto,
+})
 export class OrderController {
   constructor(private orderService: OrderService) {}
 
   @Post('/create')
   @Roles(ROLES.SHOPPER)
   @UseGuards(AuthGuard('jwt'), RoleGuard)
+  @ApiResponse({ status: 201, description: 'Created' })
   createOrder(@Req() req, @Body() createOrderDto: CreateOrderDto) {
     return this.orderService.createOrder(req.user.id, createOrderDto);
   }

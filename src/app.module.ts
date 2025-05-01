@@ -9,6 +9,8 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { UserService } from './user/user.service';
+import { EmailService } from './email/email.service';
+import { StoreService } from './store/store.service';
 
 @Module({
   imports: [
@@ -24,6 +26,6 @@ import { UserService } from './user/user.service';
       isGlobal: true,
     }),
   ],
-  providers: [UserService],
+  providers: [UserService, EmailService, StoreService],
 })
 export class AppModule {}

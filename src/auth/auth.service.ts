@@ -6,7 +6,7 @@ import { CustomError, CustomResponse } from 'src/utils/customClass';
 import { JwtService } from '@nestjs/jwt';
 import { ROLES } from 'src/utils/enum';
 import * as crypto from 'crypto';
-import { EmailService } from './email.service';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -38,17 +38,21 @@ export class AuthService {
         throw new CustomError(400, 'Invalid password');
       }
 
-      const token = this.jwt.sign({
-        sub: existingUser.id,
-        email: existingUser.email,
-        role: existingUser.roleId,
-      });
+      const token = this.jwt.sign(
+        {
+          sub: existingUser.id,
+          email: existingUser.email,
+          role: existingUser.roleId,
+        },
+        { expiresIn: '2d' },
+      );
 
       return {
         message: 'Logged in successfully',
         data: { accessToken: token },
       };
     } catch (error) {
+      console.log(error, '***************************');
       const statusCode = error instanceof CustomError ? error.statusCode : 500;
       const errorMessage =
         error instanceof CustomError

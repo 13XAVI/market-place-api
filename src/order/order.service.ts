@@ -1,30 +1,38 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto, UpdateOrderStatusDto } from '../dtos';
 import { Order } from '@prisma/client';
 import { totalPriceofOrder } from 'src/utils/functions/price';
-import { CustomError } from 'src/utils/customClass';
+import { CustomError, CustomResponse } from 'src/utils/customClass';
 import { ORDER_STATUS, ROLES } from 'src/utils/enum';
+import { Kafka } from 'kafkajs';
 
 @Injectable()
-export class OrderService {
-  constructor(private prisma: PrismaService) {}
+export class OrderService implements OnModuleInit {
+  private kafka: Kafka;
+  private producer;
+
+  constructor(private prisma: PrismaService) {
+    this.kafka = new Kafka({
+      clientId: 'market-api',
+      brokers: [process.env.KAFKA_BROKERS || 'kafka:9092'],
+    });
+    this.producer = this.kafka.producer();
+  }
+  async onModuleInit() {
+    await this.producer.connect();
+  }
 
   async createOrder(
     userId: string,
     createOrderDto: CreateOrderDto,
-  ): Promise<Order> {
+  ): Promise<CustomResponse<Order>> {
     const { items } = createOrderDto;
 
     if (!items || items.length === 0) {
       throw new CustomError(400, 'At least one item is required');
     }
 
- 
     const productIds = items.map((item) => item.productId);
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds } },
@@ -32,7 +40,7 @@ export class OrderService {
     });
 
     if (products.length !== items.length) {
-      throw new CustomError(404, ' products not found');
+      throw new CustomError(404, 'Products not found');
     }
 
     const total = totalPriceofOrder(products, items);
@@ -52,11 +60,33 @@ export class OrderService {
       include: { items: { include: { product: true } } },
     });
 
-    return order;
+    // Produce Kafka message
+    await this.producer.send({
+      topic: 'order-events',
+      messages: [
+        {
+          key: order.id,
+          value: JSON.stringify({
+            eventType: 'ORDER_CREATED',
+            orderId: order.id,
+            userId: order.userId,
+            total: order.total,
+            status: order.status,
+            items: order.items,
+            createdAt: order.createdAt,
+          }),
+        },
+      ],
+    });
+
+    return {
+      message: 'Successfully  created order',
+      data: order,
+    };
   }
 
-  async getOrdersForShopper(userId: string): Promise<Order[]> {
-    return this.prisma.order.findMany({
+  async getOrdersForShopper(userId: string): Promise<CustomResponse<Order[]>> {
+    const orders = await this.prisma.order.findMany({
       where: { userId },
       include: {
         items: {
@@ -83,12 +113,16 @@ export class OrderService {
       },
       orderBy: { createdAt: 'desc' },
     });
+    return {
+      message: 'Successfully retrieved orders',
+      data: orders,
+    };
   }
 
   async getOrderByIdForShopper(
     userId: string,
     orderId: string,
-  ): Promise<Order> {
+  ): Promise<CustomResponse<Order>> {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: {
@@ -108,26 +142,29 @@ export class OrderService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new CustomError(404, 'Order not found');
     }
     if (order.userId !== userId) {
-      throw new ForbiddenException(
+      throw new CustomError(
+        400,
         'You do not have permission to view this order',
       );
     }
 
-    return order;
+    return {
+      message: 'successfully retrived order',
+      data: order,
+    };
   }
 
-  async getOrdersForSeller(sellerId: string): Promise<Order[]> {
-
+  async getOrdersForSeller(sellerId: string): Promise<CustomResponse<Order[]>> {
     const stores = await this.prisma.store.findMany({
       where: { ownerId: sellerId },
       select: { id: true },
     });
     const storeIds = stores.map((store) => store.id);
 
-    return this.prisma.order.findMany({
+    const orders = await this.prisma.order.findMany({
       where: {
         items: {
           some: {
@@ -155,6 +192,10 @@ export class OrderService {
       },
       orderBy: { createdAt: 'desc' },
     });
+    return {
+      message: 'Orders retrived Successfull',
+      data: orders,
+    };
   }
 
   async updateOrderStatus(
@@ -162,7 +203,7 @@ export class OrderService {
     userRole: string,
     orderId: string,
     updateOrderStatusDto: UpdateOrderStatusDto,
-  ): Promise<Order> {
+  ): Promise<CustomResponse<Order>> {
     const { status } = updateOrderStatusDto;
 
     const order = await this.prisma.order.findUnique({
@@ -173,18 +214,37 @@ export class OrderService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new CustomError(404, 'Order not found');
     }
 
     if (userRole === ROLES.ADMIN) {
-
-      return this.prisma.order.update({
+      const updatedOrder = await this.prisma.order.update({
         where: { id: orderId },
         data: { status },
         include: { items: { include: { product: true } } },
       });
+
+      await this.producer.send({
+        topic: 'order-events',
+        messages: [
+          {
+            key: orderId,
+            value: JSON.stringify({
+              eventType: 'ORDER_STATUS_UPDATED',
+              orderId,
+              userId: order.userId,
+              status,
+              updatedAt: new Date(),
+            }),
+          },
+        ],
+      });
+
+      return {
+        message: 'Successfully updated order',
+        data: updatedOrder,
+      };
     } else if (userRole === ROLES.SELLER) {
-      
       const stores = await this.prisma.store.findMany({
         where: { ownerId: userId },
         select: { id: true },
@@ -203,11 +263,32 @@ export class OrderService {
         );
       }
 
-      return this.prisma.order.update({
+      const updatedOrder = await this.prisma.order.update({
         where: { id: orderId },
         data: { status },
         include: { items: { include: { product: true } } },
       });
+
+      await this.producer.send({
+        topic: 'order-events',
+        messages: [
+          {
+            key: orderId,
+            value: JSON.stringify({
+              eventType: 'ORDER_STATUS_UPDATED',
+              orderId,
+              userId: order.userId,
+              status,
+              updatedAt: new Date(),
+            }),
+          },
+        ],
+      });
+
+      return {
+        message: 'Successfully update Order Status',
+        data: updatedOrder,
+      };
     } else {
       throw new CustomError(
         403,
