@@ -36,12 +36,12 @@ import { CustomError } from 'src/utils/customClass';
 export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
 
-  @Post()
+  @Post('/add')
   @UseGuards(AuthGuard('jwt'), RoleGuard)
   @Roles(ROLES.SHOPPER)
   @UsePipes(new ValidationPipe({ transform: true }))
   @ApiBearerAuth('JWT-auth')
-  @ApiResponse({ status: 201, description: 'Review created successfully' })
+  @ApiResponse({ status: 201, description: 'Review added successfully' })
   async createReview(@Body() reviewDto: ReviewDto, @Req() req: any) {
     try {
       const userId = req.user.id;
