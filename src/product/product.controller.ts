@@ -17,14 +17,29 @@ import { CustomError } from 'src/utils/customClass';
 import { AuthGuard } from '@nestjs/passport';
 import { RoleGuard, Roles } from 'src/role';
 import { ROLES } from 'src/utils/enum';
+import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { ErrorResponseDto } from 'src/dtos/errorResponse.dto';
 
 @Controller('products')
+@ApiBearerAuth('JWT-auth')
+@ApiResponse({
+  status: 400,
+  description: 'Bad Request',
+  type: ErrorResponseDto,
+})
+@ApiResponse({ status: 401, description: 'Unauthorized Acess' })
+@ApiResponse({
+  status: 500,
+  description: 'Internal server error',
+  type: ErrorResponseDto,
+})
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
   @Post('create')
   @UsePipes(new ValidationPipe({ transform: true }))
   @UseGuards(AuthGuard('jwt'), RoleGuard)
   @Roles(ROLES.SELLER)
+  @ApiResponse({ status: 201, description: 'Created' })
   async createProduct(@Body() productDto: ProductDto, @Req() req: any) {
     try {
       const userId = req.user.id;

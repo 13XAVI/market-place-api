@@ -7,7 +7,7 @@ and sell products, manage their inventory and process orders. and perform other 
 
 ## Documentation
 
-Find the Swagger API documentation at `https:`
+Find the Swagger API documentation at `http://localhost:5000/api`
 
 ## Installation
 
@@ -48,15 +48,29 @@ To get started with Dynamites API, follow these simple steps:
 
 Before you run that commands you must have docker installed in your PC
 
-1. **Build the Docker Image:**
+1.  **Build the Docker Image Containers Together:**
+     ```sh
+     docker-compose up --build -d
+     ```
+ 
+2. **Use Docker Compose to run migration :**
    ```sh
-   docker build -t <image_name> .
+   docker-compose exec app npx prisma migrate dev
    ```
-2. **Use Docker Compose to run Containers :**
+3. **Use Docker to run Seed :**
    ```sh
-   docker-compose up
+   docker-compose exec app npm run seed
    ```
-3. **Stop the Running Containers:**
+4. **UI URLS :**
+   - If  running database UI
+    ```sh
+    docker-compose exec app npx prisma studio --port 5555
+   ```
+   - If running  Kafka Visit
+   ```sh
+    http://localhost:8080
+   ```
+5. **Additionally if you want to Stop the Running Containers:**
    - If running with Docker Compose:
      ```sh
      docker-compose down

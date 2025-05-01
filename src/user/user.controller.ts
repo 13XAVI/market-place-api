@@ -15,15 +15,29 @@ import { RoleGuard } from 'src/role/role.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from 'src/role/role.decorator';
 import { ROLES } from 'src/utils/enum';
+import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { ErrorResponseDto } from 'src/dtos/errorResponse.dto';
 
 @Controller('user')
+@ApiBearerAuth('JWT-auth')
+@ApiResponse({
+  status: 400,
+  description: 'Bad Request',
+  type: ErrorResponseDto,
+})
+@ApiResponse({
+  status: 500,
+  description: 'Internal server error',
+  type: ErrorResponseDto,
+})
+@ApiResponse({ status: 200, description: 'Success' })
 export class UserController {
   constructor(private userService: UserService) {}
 
   @Get('verify-email')
   @UseGuards(AuthGuard('jwt'), RoleGuard)
   @Roles(ROLES.SHOPPER)
- @UsePipes(new ValidationPipe({ transform: true }))
+  @UsePipes(new ValidationPipe({ transform: true }))
   async verifyEmail(@Query('token') verifyDto: VerifyDto) {
     return this.userService.verifyEmail(verifyDto.token);
   }

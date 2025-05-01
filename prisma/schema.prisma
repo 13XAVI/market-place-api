@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  output        = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -22,45 +23,46 @@ model User {
   isEmailVerified          Boolean   @default(false)
   verificationToken        String?
   verificationTokenExpires DateTime?
-  profile                  Profile?  @relation("UserProfile")
   profileId                String?   @unique
   isProfileSet             Boolean   @default(false)
-  orders                   Order[]   @relation("User_Orders")
   roleId                   String    @default(uuid())
-  role                     Role      @relation(fields: [roleId], references: [id])
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
+  orders                   Order[]   @relation("User_Orders")
+  profile                  Profile?  @relation("UserProfile")
   Review                   Review[]
   Store                    Store[]
+  role                     Role      @relation(fields: [roleId], references: [id])
 }
 
 model Profile {
   id        String   @id @default(uuid())
-  user      User     @relation("UserProfile", fields: [userId], references: [id])
   userId    String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation("UserProfile", fields: [userId], references: [id])
 }
 
 model Order {
-  id        String      @id @default(uuid())
-  user      User        @relation("User_Orders", fields: [userId], references: [id])
-  userId    String
-  items     OrderItem[]
-  total     Float
-  status    String      @default("PENDING")
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id             String      @id @default(uuid())
+  userId         String
+  total          Float
+  status         String      @default("PENDING")
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  kafkaMessageId String?
+  user           User        @relation("User_Orders", fields: [userId], references: [id])
+  items          OrderItem[]
 }
 
 model OrderItem {
   id        String   @id @default(uuid())
-  order     Order    @relation(fields: [orderId], references: [id])
   orderId   String
-  product   Product  @relation(fields: [productId], references: [id])
   productId String
   quantity  Int
   createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
 }
 
 model Product {
@@ -69,41 +71,41 @@ model Product {
   image      String[]
   price      Float
   categoryId String
-  category   Category    @relation(fields: [categoryId], references: [id])
-  store      Store?      @relation(fields: [storeId], references: [id])
   storeId    String?
-  orderItems OrderItem[]
-  reviews    Review[]
   isFeatured Boolean     @default(false)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
+  orderItems OrderItem[]
+  category   Category    @relation(fields: [categoryId], references: [id])
+  store      Store?      @relation(fields: [storeId], references: [id])
+  reviews    Review[]
 }
 
 model Category {
   id          String    @id @default(uuid())
   name        String    @unique
   description String
-  products    Product[]
   createdAt   DateTime  @default(now())
+  products    Product[]
 }
 
 model Store {
   id        String    @id @default(uuid())
   name      String
-  owner     User      @relation(fields: [ownerId], references: [id])
   ownerId   String
-  products  Product[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  products  Product[]
+  owner     User      @relation(fields: [ownerId], references: [id])
 }
 
 model Review {
   id        String   @id @default(uuid())
   rating    Int
   comment   String?
-  user      User     @relation(fields: [userId], references: [id])
   userId    String
-  product   Product  @relation(fields: [productId], references: [id])
   productId String
   createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }
