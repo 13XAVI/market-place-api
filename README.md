@@ -156,6 +156,65 @@ You can use tools like **Postman**, **Insomnia**, or **cURL** to test the endpoi
 - password:Hello@123!
 
 ## Entity Relationships
+## 🧩 Entity Relationship Diagram (ERD)
+
+The following section describes the key entities in the Marketplace system and how they relate to one another.
+
+### 🔗 Relationships Overview
+
+- A **User** can have one **Profile**.
+- A **User** has a **Role** (admin, seller, or shopper).
+- A **User** can own multiple **Stores**.
+- A **User** can place multiple **Orders**.
+- A **User** can write multiple **Reviews**.
+- A **Store** can contain multiple **Products**.
+- A **Product** belongs to a **Category** and optionally a **Store**.
+- A **Product** can have multiple **OrderItems** and **Reviews**.
+- An **Order** belongs to a **User** and contains multiple **OrderItems**.
+- An **OrderItem** references a single **Product** and belongs to a single **Order**.
+- A **Review** is linked to a **User** and a **Product**.
+
+### 📦 Entities
+
+#### User
+- `id`, `name`, `email`, `password`, `roleId`, `profileId`, ...
+- Relationships: Profile (1:1), Role (M:1), Orders (1:M), Stores (1:M), Reviews (1:M)
+
+#### Role
+- `id`, `name`
+- Relationships: Users (1:M)
+
+#### Profile
+- `id`, `userId`
+- Relationships: User (1:1)
+
+#### Store
+- `id`, `name`, `ownerId`
+- Relationships: Owner (User), Products (1:M)
+
+#### Product
+- `id`, `name`, `price`, `categoryId`, `storeId`
+- Relationships: Category (M:1), Store (M:1, optional), OrderItems (1:M), Reviews (1:M)
+
+#### Category
+- `id`, `name`, `description`
+- Relationships: Products (1:M)
+
+#### Order
+- `id`, `userId`, `status`, ...
+- Relationships: User (M:1), OrderItems (1:M)
+
+#### OrderItem
+- `id`, `orderId`, `productId`, `quantity`
+- Relationships: Order (M:1), Product (M:1)
+
+#### Review
+- `id`, `rating`, `userId`, `productId`, `comment`
+- Relationships: User (M:1), Product (M:1)
+
+---
+
+> 📝 **Note:** For a visual representation, refer to the ER diagram provided in the documentation or architecture section.
 
 
 ## System Design
