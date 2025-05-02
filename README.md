@@ -85,3 +85,74 @@ Before you run that commands you must have docker installed in your PC
 ## Usage
 
 Once the development server is running, you can interact with the API using HTTP requests.
+
+
+You can use tools like **Postman**, **Insomnia**, or **cURL** to test the endpoints.
+
+---
+
+## API Endpoints
+
+### 🔐 Authentication
+
+- `POST /auth/signup` – Register a new user  
+- `POST /auth/login` – Login and receive JWT  
+- `POST /auth/verify-email` – Verify user email  
+- `POST /auth/forgot-password` – Initiate password reset  
+- `POST /auth/reset-password` – Reset password using token  
+
+### 👤 Users
+
+- `GET /users/:id` – Get user profile  
+- `PUT /users/:id` – Update user info  
+- `DELETE /users/:id` – Delete user  
+
+### 🛍️ Products
+
+- `GET /products` – List all products  
+- `GET /products/:id` – Get product details  
+- `POST /products` – Create a new product (seller only)  
+- `PUT /products/:id` – Update product  
+- `DELETE /products/:id` – Delete product  
+
+### 🏬 Stores
+
+- `POST /stores` – Create a new store  
+- `GET /stores` – List all stores  
+- `GET /stores/:id` – Get store by ID  
+- `PUT /stores/:id` – Update store  
+- `DELETE /stores/:id` – Delete store  
+
+### 📦 Orders
+
+- `POST /orders` – Create a new order  
+- `GET /orders` – List user’s orders  
+- `GET /orders/:id` – Get order details  
+- `PUT /orders/:id` – Update order status (admin only)  
+
+### ⭐ Reviews
+
+- `POST /reviews` – Add a product review  
+- `GET /products/:id/reviews` – List product reviews  
+
+---
+
+## Entity Relationships
+
+```mermaid
+erDiagram
+    USER ||--o{ ORDER : places
+    USER ||--o{ REVIEW : writes
+    USER ||--o{ STORE : owns
+    USER ||--o| PROFILE : has
+    USER }o--|| ROLE : assigned
+
+    ROLE ||--o{ USER : includes
+
+    ORDER ||--|{ ORDERITEM : contains
+    ORDERITEM }|--|| PRODUCT : references
+
+    PRODUCT }o--|| CATEGORY : belongs
+    PRODUCT }o--|| STORE : listedBy
+    PRODUCT ||--o{ REVIEW : receives
+
