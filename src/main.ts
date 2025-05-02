@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { CustomExceptionFilter } from './utils/customClass';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,7 +12,7 @@ async function bootstrap() {
       'An online marketplace that allows users to buy and sell products, manage their inventory, and process orders.',
     )
     .setVersion('1.0')
-    .setContact('Support Team', 'https://example.com', 'support@example.com')
+    .setContact('Support Team', 'https://market-place-api-ns56.onrender.com/', 'support@example.com')
     .setLicense('MIT', 'https://opensource.org/licenses/MIT')
     .addTag('Auth')
     .addTag('User')
@@ -44,6 +45,7 @@ async function bootstrap() {
     },
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.useGlobalFilters(new CustomExceptionFilter());
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();

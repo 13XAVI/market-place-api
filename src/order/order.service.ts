@@ -1,27 +1,27 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto, UpdateOrderStatusDto } from '../dtos';
 import { Order } from '@prisma/client';
 import { totalPriceofOrder } from 'src/utils/functions/price';
 import { CustomError, CustomResponse } from 'src/utils/customClass';
 import { ORDER_STATUS, ROLES } from 'src/utils/enum';
-import { Kafka } from 'kafkajs';
+// import { Kafka } from 'kafkajs';
 
 @Injectable()
-export class OrderService implements OnModuleInit {
-  private kafka: Kafka;
-  private producer;
+export class OrderService {
+  // private kafka: Kafka;
+  // private producer;
 
   constructor(private prisma: PrismaService) {
-    this.kafka = new Kafka({
-      clientId: 'market-api',
-      brokers: [process.env.KAFKA_BROKERS || 'kafka:9092'],
-    });
-    this.producer = this.kafka.producer();
+    // this.kafka = new Kafka({
+    //   clientId: 'market-api',
+    //   brokers: [process.env.KAFKA_BROKERS || 'kafka:9092'],
+    // });
+    // this.producer = this.kafka.producer();
   }
-  async onModuleInit() {
-    await this.producer.connect();
-  }
+  // async onModuleInit() {
+  //   await this.producer.connect();
+  // }
 
   async createOrder(
     userId: string,
@@ -60,30 +60,31 @@ export class OrderService implements OnModuleInit {
       include: { items: { include: { product: true } } },
     });
 
-    // Produce Kafka message
-    await this.producer.send({
-      topic: 'order-events',
-      messages: [
-        {
-          key: order.id,
-          value: JSON.stringify({
-            eventType: 'ORDER_CREATED',
-            orderId: order.id,
-            userId: order.userId,
-            total: order.total,
-            status: order.status,
-            items: order.items,
-            createdAt: order.createdAt,
-          }),
-        },
-      ],
-    });
+    // await this.producer.send({
+    //   topic: 'order-events',
+    //   messages: [
+    //     {
+    //       key: order.id,
+    //       value: JSON.stringify({
+    //         eventType: 'ORDER_CREATED',
+    //         orderId: order.id,
+    //         userId: order.userId,
+    //         total: order.total,
+    //         status: order.status,
+    //         items: order.items,
+    //         createdAt: order.createdAt,
+    //       }),
+    //     },
+    //   ],
+    // });
 
     return {
       message: 'Successfully  created order',
       data: order,
     };
   }
+
+
 
   async getOrdersForShopper(userId: string): Promise<CustomResponse<Order[]>> {
     const orders = await this.prisma.order.findMany({
@@ -157,6 +158,8 @@ export class OrderService implements OnModuleInit {
     };
   }
 
+
+
   async getOrdersForSeller(sellerId: string): Promise<CustomResponse<Order[]>> {
     const stores = await this.prisma.store.findMany({
       where: { ownerId: sellerId },
@@ -224,21 +227,21 @@ export class OrderService implements OnModuleInit {
         include: { items: { include: { product: true } } },
       });
 
-      await this.producer.send({
-        topic: 'order-events',
-        messages: [
-          {
-            key: orderId,
-            value: JSON.stringify({
-              eventType: 'ORDER_STATUS_UPDATED',
-              orderId,
-              userId: order.userId,
-              status,
-              updatedAt: new Date(),
-            }),
-          },
-        ],
-      });
+      // await this.producer.send({
+      //   topic: 'order-events',
+      //   messages: [
+      //     {
+      //       key: orderId,
+      //       value: JSON.stringify({
+      //         eventType: 'ORDER_STATUS_UPDATED',
+      //         orderId,
+      //         userId: order.userId,
+      //         status,
+      //         updatedAt: new Date(),
+      //       }),
+      //     },
+      //   ],
+      // });
 
       return {
         message: 'Successfully updated order',
@@ -269,21 +272,21 @@ export class OrderService implements OnModuleInit {
         include: { items: { include: { product: true } } },
       });
 
-      await this.producer.send({
-        topic: 'order-events',
-        messages: [
-          {
-            key: orderId,
-            value: JSON.stringify({
-              eventType: 'ORDER_STATUS_UPDATED',
-              orderId,
-              userId: order.userId,
-              status,
-              updatedAt: new Date(),
-            }),
-          },
-        ],
-      });
+      // await this.producer.send({
+      //   topic: 'order-events',
+      //   messages: [
+      //     {
+      //       key: orderId,
+      //       value: JSON.stringify({
+      //         eventType: 'ORDER_STATUS_UPDATED',
+      //         orderId,
+      //         userId: order.userId,
+      //         status,
+      //         updatedAt: new Date(),
+      //       }),
+      //     },
+      //   ],
+      // });
 
       return {
         message: 'Successfully update Order Status',

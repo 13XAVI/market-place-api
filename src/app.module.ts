@@ -14,6 +14,9 @@ import { StoreService } from './store/store.service';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     AuthModule,
     UserModule,
     ProductModule,
@@ -22,9 +25,6 @@ import { StoreService } from './store/store.service';
     CategoryModule,
     ReviewsModule,
     PrismaModule,
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
   ],
   providers: [UserService, EmailService, StoreService],
 })

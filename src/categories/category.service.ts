@@ -85,7 +85,7 @@ export class CategoryService {
     }
   }
 
-  async findOneCategory(id: string): Promise<CustomResponse<any>> {
+  async OneCategory(id: string): Promise<CustomResponse<any>> {
     try {
       if (!id) {
         throw new CustomError(400, 'Category ID is required');
@@ -125,20 +125,14 @@ export class CategoryService {
     }
   }
 
-  async findAllCategory(): Promise<CustomResponse<any>> {
+  async AllCategory(): Promise<CustomResponse<any>> {
     try {
       const categories = await this.prisma.category.findMany({
-        include: {
-          products: {
-            select: {
-              id: true,
-              name: true,
-              price: true,
-              image: true,
-              isFeatured: true,
-              createdAt: true,
-            },
-          },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          createdAt: true,
         },
       });
 

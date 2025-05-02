@@ -1,43 +1,44 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, UseFilters } from '@nestjs/common';
 import * as sendgrid from '@sendgrid/mail';
-import { CustomError } from 'src/utils/customClass';
-import { Kafka } from 'kafkajs';
+import { CustomError, CustomExceptionFilter } from 'src/utils/customClass';
+// import { Kafka } from 'kafkajs';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
-export class EmailService implements OnModuleInit {
-  private kafka: Kafka;
-  private consumer;
+@UseFilters(CustomExceptionFilter)
+export class EmailService {
+  // private kafka: Kafka;
+  // private consumer;
 
   constructor(private prisma: PrismaService) {
-    this.kafka = new Kafka({
-      clientId: 'email-service',
-      brokers: [process.env.KAFKA_BROKERS || 'kafka:9092'],
-    });
-    this.consumer = this.kafka.consumer({ groupId: 'email-group' });
+    // this.kafka = new Kafka({
+    //   clientId: 'email-service',
+    //   brokers: [process.env.KAFKA_BROKERS || 'kafka:9092'],
+    // });
+    // this.consumer = this.kafka.consumer({ groupId: 'email-group' });
     sendgrid.setApiKey(process.env.SENDGRID_API_KEY as string);
   }
 
-  async onModuleInit() {
-    await this.consumer.connect();
-    await this.consumer.subscribe({
-      topic: 'order-events',
-      fromBeginning: false,
-    });
+  // async onModuleInit() {
+  //   await this.consumer.connect();
+  //   await this.consumer.subscribe({
+  //     topic: 'order-events',
+  //     fromBeginning: false,
+  //   });
 
-    await this.consumer.run({
-      eachMessage: async ({ message }) => {
-        const event = JSON.parse(message.value.toString());
-        if (event.eventType === 'ORDER_STATUS_UPDATED') {
-          await this.sendOrderStatusUpdateEmail(
-            event.orderId,
-            event.status,
-            event.userId,
-          );
-        }
-      },
-    });
-  }
+  //   await this.consumer.run({
+  //     eachMessage: async ({ message }) => {
+  //       const event = JSON.parse(message.value.toString());
+  //       if (event.eventType === 'ORDER_STATUS_UPDATED') {
+  //         await this.sendOrderStatusUpdateEmail(
+  //           event.orderId,
+  //           event.status,
+  //           event.userId,
+  //         );
+  //       }
+  //     },
+  //   });
+  // }
 
   async sendVerificationEmail(to: string, token: string): Promise<void> {
     const verificationLink = `https://market-place-api-ns56.onrender.com/auth/verify-email?token=${token}`;
@@ -52,6 +53,7 @@ export class EmailService implements OnModuleInit {
     try {
       await sendgrid.send(msg);
     } catch (error) {
+      console.log(error, 'Erooooooooooooooooooooooooooooooooooooooooooooor');
       const statusCode = error instanceof CustomError ? error.statusCode : 500;
       const errorMessage =
         error instanceof CustomError

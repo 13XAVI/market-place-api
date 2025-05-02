@@ -90,7 +90,6 @@ export class ProductService {
       throw new CustomError(400, 'Product ID is required');
     }
 
-    // Check if product exists
     const product = await this.prisma.product.findUnique({
       where: { id },
     });
@@ -98,7 +97,6 @@ export class ProductService {
       throw new CustomError(404, 'Product not found');
     }
 
-    // Verify user owns the store (if storeId exists)
     if (product.storeId && product.storeId !== productDto.storeId) {
       const store = await this.prisma.store.findUnique({
         where: { id: product.storeId },
@@ -108,7 +106,6 @@ export class ProductService {
       }
     }
 
-    // Check if category exists
     if (productDto.categoryId) {
       const category = await this.prisma.category.findUnique({
         where: { id: productDto.categoryId },
@@ -118,7 +115,6 @@ export class ProductService {
       }
     }
 
-    // Check if new storeId is valid
     const storeId = productDto.storeId;
     if (storeId) {
       const store = await this.prisma.store.findUnique({
@@ -128,7 +124,7 @@ export class ProductService {
         throw new CustomError(404, 'Store not found');
       }
       if (store.ownerId !== userId) {
-        throw new CustomError(403, 'You do not own this store');
+        throw new CustomError(403, 'You do not own this product');
       }
     }
 

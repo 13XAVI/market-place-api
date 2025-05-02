@@ -6,6 +6,7 @@ import {
   Post,
   Put,
   Req,
+  UseFilters,
   UseGuards,
 } from '@nestjs/common';
 import { OrderService } from './order.service';
@@ -13,8 +14,14 @@ import { CreateOrderDto, UpdateOrderStatusDto } from '../dtos';
 import { ROLES } from '../utils/enum';
 import { RoleGuard, Roles } from 'src/role';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ErrorResponseDto } from 'src/dtos/errorResponse.dto';
+import { CustomExceptionFilter } from 'src/utils/customClass';
 
 @Controller('orders')
 @UseGuards()
@@ -31,6 +38,7 @@ import { ErrorResponseDto } from 'src/dtos/errorResponse.dto';
   description: 'Internal server error',
   type: ErrorResponseDto,
 })
+@UseFilters(CustomExceptionFilter)
 export class OrderController {
   constructor(private orderService: OrderService) {}
 
@@ -38,6 +46,7 @@ export class OrderController {
   @Roles(ROLES.SHOPPER)
   @UseGuards(AuthGuard('jwt'), RoleGuard)
   @ApiResponse({ status: 201, description: 'Created' })
+  @ApiOperation({ summary: 'create orders for the store ' })
   createOrder(@Req() req, @Body() createOrderDto: CreateOrderDto) {
     return this.orderService.createOrder(req.user.id, createOrderDto);
   }
@@ -45,6 +54,8 @@ export class OrderController {
   @Get('/shopper/all')
   @Roles(ROLES.SHOPPER)
   @UseGuards(AuthGuard('jwt'), RoleGuard)
+  @ApiResponse({ status: 200, description: 'success' })
+  @ApiOperation({ summary: 'Get orders for the shoppers' })
   getOrdersForShopper(@Req() req) {
     return this.orderService.getOrdersForShopper(req.user.id);
   }
@@ -52,6 +63,7 @@ export class OrderController {
   @Get('/shopper/:id')
   @Roles(ROLES.SHOPPER)
   @UseGuards(AuthGuard('jwt'), RoleGuard)
+  @ApiOperation({ summary: 'Get orders  by id for shopper' })
   getOrderByIdForShopper(@Req() req, @Param('id') orderId: string) {
     return this.orderService.getOrderByIdForShopper(req.user.id, orderId);
   }
@@ -59,6 +71,7 @@ export class OrderController {
   @Get('seller/all')
   @Roles(ROLES.SELLER)
   @UseGuards(AuthGuard('jwt'), RoleGuard)
+  @ApiOperation({ summary: 'Get orders for the seller' })
   getOrdersForSeller(@Req() req) {
     return this.orderService.getOrdersForSeller(req.user.id);
   }
@@ -66,6 +79,7 @@ export class OrderController {
   @Put(':id/status')
   @Roles(ROLES.SELLER, ROLES.ADMIN)
   @UseGuards(AuthGuard('jwt'), RoleGuard)
+  @ApiOperation({ summary: 'update order status by admin' })
   updateOrderStatus(
     @Req() req,
     @Param('id') orderId: string,

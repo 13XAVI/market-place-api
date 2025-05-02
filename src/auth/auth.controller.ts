@@ -1,8 +1,11 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseFilters } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthCredentialsDto, CreateUserDto, SignInResponseDto } from '../dtos';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ErrorResponseDto } from 'src/dtos/errorResponse.dto';
+import { ROLES } from 'src/utils/enum';
+import { Roles } from 'src/role';
+import { CustomExceptionFilter } from 'src/utils/customClass';
 
 @ApiTags('Auth')
 @ApiResponse({
@@ -16,10 +19,12 @@ import { ErrorResponseDto } from 'src/dtos/errorResponse.dto';
   type: ErrorResponseDto,
 })
 @Controller('auth')
+@UseFilters(CustomExceptionFilter)
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('signup')
+  @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'Created', type: SignInResponseDto })
   signup(@Body() userDto: CreateUserDto) {
