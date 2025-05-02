@@ -166,7 +166,7 @@ export class ProductService {
       throw new CustomError(404, 'Product not found');
     }
 
-    // Verify user owns the store (if storeId exists)
+
     if (product.storeId) {
       const store = await this.prisma.store.findUnique({
         where: { id: product.storeId },
@@ -176,7 +176,7 @@ export class ProductService {
       }
     }
 
-    // Check for dependencies
+
     if (product.orderItems.length > 0) {
       throw new CustomError(
         400,
