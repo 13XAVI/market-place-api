@@ -139,6 +139,11 @@ You can use tools like **Postman**, **Insomnia**, or **cURL** to test the endpoi
 
 ## Entity Relationships
 
+
+## System Design
+![system design](https://github.com/user-attachments/assets/44fdecb5-2a8a-4959-9829-6f18fb665340)
+
+
 ```mermaid
 erDiagram
     USER ||--o{ ORDER : places
