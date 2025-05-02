@@ -1,26 +1,26 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStoreDto, UpdateStoreDto } from '../dtos';
 import { Store } from '@prisma/client';
 import { CustomError, CustomResponse } from '../utils/customClass';
 import { ROLES } from '../utils/enum';
-// import { Kafka, Producer } from 'kafkajs';
+import { Kafka, Producer } from 'kafkajs';
 
 @Injectable()
-export class StoreService {
-  // private producer: Producer;
+export class StoreService implements OnModuleInit {
+  private producer: Producer;
 
   constructor(private prisma: PrismaService) {
-    // const kafka = new Kafka({
-    //   clientId: 'market-api',
-    //   brokers: [process.env.KAFKA_BROKERS || 'kafka:9092'],
-    // });
-    // this.producer = kafka.producer();
+    const kafka = new Kafka({
+      clientId: 'market-api',
+      brokers: [process.env.KAFKA_BROKERS || 'kafka:9092'],
+    });
+    this.producer = kafka.producer();
   }
 
-  // async onModuleInit() {
-  //   await this.producer.connect();
-  // }
+  async onModuleInit() {
+    await this.producer.connect();
+  }
 
   async createStore(
     userId: string,
@@ -78,30 +78,27 @@ export class StoreService {
       });
     });
 
-    // await this.producer.send({
-    //   topic: 'store-events',
-    //   messages: [
-    //     {
-    //       key: store?.id,
-    //       value: JSON.stringify({
-    //         eventType: 'STORE_CREATED',
-    //         storeId: store?.id,
-    //         name: store?.name,
-    //         ownerId: store?.ownerId,
-    //         createdAt: store?.createdAt,
-    //       }),
-    //     },
-    //   ],
-    // });
+    await this.producer.send({
+      topic: 'store-events',
+      messages: [
+        {
+          key: store?.id,
+          value: JSON.stringify({
+            eventType: 'STORE_CREATED',
+            storeId: store?.id,
+            name: store?.name,
+            ownerId: store?.ownerId,
+            createdAt: store?.createdAt,
+          }),
+        },
+      ],
+    });
 
     return {
       message: 'Store Successfully Created',
       data: store,
     };
   }
-
-
-
 
   async getStoreById(storeId: string): Promise<CustomResponse<Store>> {
     const store = await this.prisma.store.findUnique({
@@ -151,8 +148,6 @@ export class StoreService {
       data: stores,
     };
   }
-
-
 
   async updateStore(
     userId: string,
