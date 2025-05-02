@@ -10,15 +10,16 @@ import {
   ValidationPipe,
   Req,
   UseGuards,
+  UseFilters,
 } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { ReviewDto, UpdateReviewDto } from 'src/dtos';
 import { AuthGuard } from '@nestjs/passport';
 import { RoleGuard, Roles } from 'src/role';
 import { ROLES } from 'src/utils/enum';
-import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ErrorResponseDto } from 'src/dtos/errorResponse.dto';
-import { CustomError } from 'src/utils/customClass';
+import { CustomError, CustomExceptionFilter } from 'src/utils/customClass';
 
 @Controller('reviews')
 @ApiTags('reviews')
@@ -33,6 +34,7 @@ import { CustomError } from 'src/utils/customClass';
   description: 'Internal server error',
   type: ErrorResponseDto,
 })
+@UseFilters(CustomExceptionFilter)
 export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
 
@@ -42,6 +44,7 @@ export class ReviewController {
   @UsePipes(new ValidationPipe({ transform: true }))
   @ApiBearerAuth('JWT-auth')
   @ApiResponse({ status: 201, description: 'Review added successfully' })
+   @ApiOperation({ summary: 'add review as  shopper' })
   async createReview(@Body() reviewDto: ReviewDto, @Req() req: any) {
     try {
       const userId = req.user.id;
@@ -53,6 +56,8 @@ export class ReviewController {
 
   @Get('product/:productId')
   @ApiResponse({ status: 200, description: 'List of reviews for the product' })
+  @Roles(ROLES.SHOPPER)
+  @ApiOperation({ summary: 'Get reviews  by product' })
   async getReviewsByProduct(@Param('productId') productId: string) {
     try {
       return await this.reviewService.findReviewsByProduct(productId);
@@ -61,8 +66,9 @@ export class ReviewController {
     }
   }
 
-  @Get(':id')
+  @Get('getOne/:id')
   @ApiResponse({ status: 200, description: 'Review details' })
+  @ApiOperation({ summary: 'Get review  of single product' })
   async getReviewById(@Param('id') id: string) {
     try {
       return await this.reviewService.findOneReview(id);
@@ -71,11 +77,12 @@ export class ReviewController {
     }
   }
 
-  @Patch(':id')
+  @Patch('update/:id')
   @UseGuards(AuthGuard('jwt'), RoleGuard)
   @Roles(ROLES.SHOPPER)
   @UsePipes(new ValidationPipe({ transform: true }))
   @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'update reviews  of product by shopper' })
   @ApiResponse({ status: 200, description: 'Review updated successfully' })
   async updateReview(
     @Param('id') id: string,
@@ -90,10 +97,11 @@ export class ReviewController {
     }
   }
 
-  @Delete(':id')
+  @Delete('remove/:id')
   @UseGuards(AuthGuard('jwt'), RoleGuard)
   @Roles(ROLES.SHOPPER)
   @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'remove review  of product by shopper' })
   @ApiResponse({ status: 200, description: 'Review deleted successfully' })
   async deleteReview(@Param('id') id: string, @Req() req: any) {
     try {

@@ -55,7 +55,7 @@ Before you run that commands you must have docker installed in your PC
 
 2.  **Use Docker Compose to run migration :**
     ```sh
-    docker-compose exec app npx prisma migrate dev
+    docker-compose run --rm app npx prisma migrate dev --name init
     ```
 3.  **Use Docker to run Seed :**
     ```sh
@@ -75,6 +75,11 @@ Before you run that commands you must have docker installed in your PC
     ```sh
     docker-compose down
     ```
+    - logging kafka and zookeper
+      ```sh
+      docker-compose logs kafka
+      docker-compose logs zookeeper
+      ```
 
 ## Usage
 

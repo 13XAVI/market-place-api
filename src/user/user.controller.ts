@@ -5,6 +5,7 @@ import {
   Put,
   Query,
   Req,
+  UseFilters,
   UseGuards,
   UsePipes,
   ValidationPipe,
@@ -15,8 +16,9 @@ import { RoleGuard } from 'src/role/role.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from 'src/role/role.decorator';
 import { ROLES } from 'src/utils/enum';
-import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ErrorResponseDto } from 'src/dtos/errorResponse.dto';
+import { CustomExceptionFilter } from 'src/utils/customClass';
 
 @Controller('user')
 @ApiBearerAuth('JWT-auth')
@@ -31,6 +33,7 @@ import { ErrorResponseDto } from 'src/dtos/errorResponse.dto';
   type: ErrorResponseDto,
 })
 @ApiResponse({ status: 200, description: 'Success' })
+@UseFilters(CustomExceptionFilter)
 export class UserController {
   constructor(private userService: UserService) {}
 
@@ -38,6 +41,7 @@ export class UserController {
   @UseGuards(AuthGuard('jwt'), RoleGuard)
   @Roles(ROLES.SHOPPER)
   @UsePipes(new ValidationPipe({ transform: true }))
+  @ApiOperation({ summary: 'Verify user email' })
   async verifyEmail(@Query('token') verifyDto: VerifyDto) {
     return this.userService.verifyEmail(verifyDto.token);
   }
@@ -45,6 +49,7 @@ export class UserController {
   @Put('update-profile')
   @UseGuards(AuthGuard('jwt'), RoleGuard)
   @Roles(ROLES.SHOPPER)
+  @ApiOperation({ summary: 'Update user profile' })
   async setProfile(@Req() req, @Body() name: string) {
     const id = req.user.id;
     return this.userService.setProfile(id, name);
@@ -52,6 +57,7 @@ export class UserController {
   @Get('all')
   @UseGuards(AuthGuard('jwt'), RoleGuard)
   @Roles(ROLES.ADMIN)
+  @ApiOperation({ summary: 'Get all users existing' })
   async getAllUser() {
     return this.userService.getAllUsers();
   }

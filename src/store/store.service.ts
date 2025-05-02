@@ -1,26 +1,26 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStoreDto, UpdateStoreDto } from '../dtos';
 import { Store } from '@prisma/client';
 import { CustomError, CustomResponse } from '../utils/customClass';
 import { ROLES } from '../utils/enum';
-import { Kafka, Producer } from 'kafkajs';
+// import { Kafka, Producer } from 'kafkajs';
 
 @Injectable()
-export class StoreService implements OnModuleInit {
-  private producer: Producer;
+export class StoreService {
+  // private producer: Producer;
 
   constructor(private prisma: PrismaService) {
-    const kafka = new Kafka({
-      clientId: 'market-api',
-      brokers: [process.env.KAFKA_BROKERS || 'kafka:9092'],
-    });
-    this.producer = kafka.producer();
+    // const kafka = new Kafka({
+    //   clientId: 'market-api',
+    //   brokers: [process.env.KAFKA_BROKERS || 'kafka:9092'],
+    // });
+    // this.producer = kafka.producer();
   }
 
-  async onModuleInit() {
-    await this.producer.connect();
-  }
+  // async onModuleInit() {
+  //   await this.producer.connect();
+  // }
 
   async createStore(
     userId: string,
@@ -78,27 +78,30 @@ export class StoreService implements OnModuleInit {
       });
     });
 
-    await this.producer.send({
-      topic: 'store-events',
-      messages: [
-        {
-          key: store?.id,
-          value: JSON.stringify({
-            eventType: 'STORE_CREATED',
-            storeId: store?.id,
-            name: store?.name,
-            ownerId: store?.ownerId,
-            createdAt: store?.createdAt,
-          }),
-        },
-      ],
-    });
+    // await this.producer.send({
+    //   topic: 'store-events',
+    //   messages: [
+    //     {
+    //       key: store?.id,
+    //       value: JSON.stringify({
+    //         eventType: 'STORE_CREATED',
+    //         storeId: store?.id,
+    //         name: store?.name,
+    //         ownerId: store?.ownerId,
+    //         createdAt: store?.createdAt,
+    //       }),
+    //     },
+    //   ],
+    // });
 
     return {
       message: 'Store Successfully Created',
       data: store,
     };
   }
+
+
+
 
   async getStoreById(storeId: string): Promise<CustomResponse<Store>> {
     const store = await this.prisma.store.findUnique({
@@ -149,6 +152,8 @@ export class StoreService implements OnModuleInit {
     };
   }
 
+
+
   async updateStore(
     userId: string,
     userRole: string,
@@ -175,20 +180,20 @@ export class StoreService implements OnModuleInit {
       data: updateStoreDto,
     });
 
-    await this.producer.send({
-      topic: 'store-events',
-      messages: [
-        {
-          key: storeId,
-          value: JSON.stringify({
-            eventType: 'STORE_UPDATED',
-            storeId,
-            name: updatedStore.name,
-            updatedAt: updatedStore.updatedAt,
-          }),
-        },
-      ],
-    });
+    // await this.producer.send({
+    //   topic: 'store-events',
+    //   messages: [
+    //     {
+    //       key: storeId,
+    //       value: JSON.stringify({
+    //         eventType: 'STORE_UPDATED',
+    //         storeId,
+    //         name: updatedStore.name,
+    //         updatedAt: updatedStore.updatedAt,
+    //       }),
+    //     },
+    //   ],
+    // });
 
     return {
       message: 'Store Successfully Updated',
@@ -231,19 +236,19 @@ export class StoreService implements OnModuleInit {
       where: { id: storeId },
     });
 
-    await this.producer.send({
-      topic: 'store-events',
-      messages: [
-        {
-          key: storeId,
-          value: JSON.stringify({
-            eventType: 'STORE_DELETED',
-            storeId,
-            deletedAt: new Date(),
-          }),
-        },
-      ],
-    });
+    // await this.producer.send({
+    //   topic: 'store-events',
+    //   messages: [
+    //     {
+    //       key: storeId,
+    //       value: JSON.stringify({
+    //         eventType: 'STORE_DELETED',
+    //         storeId,
+    //         deletedAt: new Date(),
+    //       }),
+    //     },
+    //   ],
+    // });
 
     return {
       message: 'Store Successfully Deleted',
