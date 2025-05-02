@@ -33,7 +33,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "kafka-topics", "--list", "--bootstrap-server", "kafka:9092"]
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka:9092"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -45,25 +45,20 @@ services:
         max-file: "3"
 
   app:
-    build: .
+    image: 13xavi/marketplace:latest
     restart: always
     environment:
-      DATABASE_HOST: db
-      DATABASE_PORT: ${DATABASE_PORT}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      DATABASE_URL: ${DATABASE_URL}
-      KAFKA_BROKERS: ${KAFKA_BROKERS}
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/market_api?schema=public
+      KAFKA_BROKERS: kafka:9092
       KAFKAJS_NO_PARTITIONER_WARNING: ${KAFKAJS_NO_PARTITIONER_WARNING}
-      PORT: ${PORT}
+      PORT: 5000
     depends_on:
       kafka:
         condition: service_healthy
       db:
         condition: service_healthy
     ports:
-      - "${PORT}:${PORT}"
+      - "5000:5000"
       - "${PRISMA_STUDIO_PORT}:${PRISMA_STUDIO_PORT}"
     volumes:
       - ./:/usr/src/app
@@ -71,7 +66,7 @@ services:
     networks:
       - app-network
     command: >
-      sh -c "sleep 15 && npm run start:dev"
+      sh -c "sleep 45 && npm run start:dev"
     logging:
       driver: "json-file"
       options:
@@ -82,7 +77,7 @@ services:
     image: postgres:14
     restart: always
     ports:
-      - 5434:5432
+      - 5432:5432
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres

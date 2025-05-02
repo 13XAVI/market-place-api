@@ -8,7 +8,6 @@ describe('ProductService', () => {
   let productService: ProductService;
   let prismaService: PrismaService;
 
- 
   const mockPrismaService = {
     store: {
       findUnique: jest.fn(),
@@ -63,14 +62,11 @@ describe('ProductService', () => {
     };
 
     it('should create a product successfully', async () => {
-      // Arrange
       mockPrismaService.store.findUnique.mockResolvedValue(mockStore);
       mockPrismaService.product.create.mockResolvedValue(mockProduct);
 
-      // Act
       const result = await productService.createProduct(productDto, userId);
 
-      // Assert
       expect(prismaService.store.findUnique).toHaveBeenCalledWith({
         where: { id: productDto.storeId },
       });
@@ -91,13 +87,11 @@ describe('ProductService', () => {
     });
 
     it('should throw 404 if store is not found', async () => {
-      // Arrange
       mockPrismaService.store.findUnique.mockResolvedValue(null);
 
-      // Act & Assert
-      await expect(productService.createProduct(productDto, userId)).rejects.toEqual(
-        new CustomError(404, 'Store not found'),
-      );
+      await expect(
+        productService.createProduct(productDto, userId),
+      ).rejects.toEqual(new CustomError(404, 'Store not found'));
       expect(prismaService.store.findUnique).toHaveBeenCalledWith({
         where: { id: productDto.storeId },
       });
@@ -105,16 +99,14 @@ describe('ProductService', () => {
     });
 
     it('should throw 403 if user does not own the store', async () => {
-      // Arrange
       mockPrismaService.store.findUnique.mockResolvedValue({
         ...mockStore,
         ownerId: 'other-user-id',
       });
 
-      // Act & Assert
-      await expect(productService.createProduct(productDto, userId)).rejects.toEqual(
-        new CustomError(403, 'You do not own this store'),
-      );
+      await expect(
+        productService.createProduct(productDto, userId),
+      ).rejects.toEqual(new CustomError(403, 'You do not own this store'));
       expect(prismaService.store.findUnique).toHaveBeenCalledWith({
         where: { id: productDto.storeId },
       });
@@ -122,13 +114,13 @@ describe('ProductService', () => {
     });
 
     it('should throw 500 for unexpected errors', async () => {
-      // Arrange
-      mockPrismaService.store.findUnique.mockRejectedValue(new Error('Database error'));
-
-      // Act & Assert
-      await expect(productService.createProduct(productDto, userId)).rejects.toEqual(
-        new CustomError(500, 'Unexpected error occurred'),
+      mockPrismaService.store.findUnique.mockRejectedValue(
+        new Error('Database error'),
       );
+
+      await expect(
+        productService.createProduct(productDto, userId),
+      ).rejects.toEqual(new CustomError(500, 'Unexpected error occurred'));
       expect(prismaService.store.findUnique).toHaveBeenCalledWith({
         where: { id: productDto.storeId },
       });
@@ -147,19 +139,23 @@ describe('ProductService', () => {
       isFeatured: true,
       category: { id: 'category-id-1', name: 'Electronics' },
       store: { id: 'store-id-1', name: 'Tech Store' },
-      reviews: [{ id: 'review-id-1', rating: 5, comment: 'Great product', createdAt: new Date() }],
+      reviews: [
+        {
+          id: 'review-id-1',
+          rating: 5,
+          comment: 'Great product',
+          createdAt: new Date(),
+        },
+      ],
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     it('should retrieve a product by ID successfully', async () => {
-      // Arrange
       mockPrismaService.product.findUnique.mockResolvedValue(mockProduct);
 
-      // Act
       const result = await productService.findOneProduct(productId);
 
-      // Assert
       expect(prismaService.product.findUnique).toHaveBeenCalledWith({
         where: { id: productId },
         include: {
@@ -177,7 +173,6 @@ describe('ProductService', () => {
     });
 
     it('should throw 400 if ID is missing', async () => {
-      // Act & Assert
       await expect(productService.findOneProduct('')).rejects.toEqual(
         new CustomError(400, 'Product ID is required'),
       );
@@ -185,10 +180,8 @@ describe('ProductService', () => {
     });
 
     it('should throw 404 if product is not found', async () => {
-      // Arrange
       mockPrismaService.product.findUnique.mockResolvedValue(null);
 
-      // Act & Assert
       await expect(productService.findOneProduct(productId)).rejects.toEqual(
         new CustomError(404, 'Product not found'),
       );
@@ -199,10 +192,10 @@ describe('ProductService', () => {
     });
 
     it('should throw 500 for unexpected errors', async () => {
-      // Arrange
-      mockPrismaService.product.findUnique.mockRejectedValue(new Error('Database error'));
+      mockPrismaService.product.findUnique.mockRejectedValue(
+        new Error('Database error'),
+      );
 
-      // Act & Assert
       await expect(productService.findOneProduct(productId)).rejects.toEqual(
         new CustomError(500, 'Unexpected error occurred'),
       );
@@ -231,13 +224,10 @@ describe('ProductService', () => {
     ];
 
     it('should retrieve all products successfully', async () => {
-      // Arrange
       mockPrismaService.product.findMany.mockResolvedValue(mockProducts);
 
-      // Act
       const result = await productService.findAllProducts();
 
-      // Assert
       expect(prismaService.product.findMany).toHaveBeenCalledWith({
         include: {
           category: { select: { id: true, name: true } },
@@ -251,13 +241,10 @@ describe('ProductService', () => {
     });
 
     it('should return empty array if no products exist', async () => {
-      // Arrange
       mockPrismaService.product.findMany.mockResolvedValue([]);
 
-      // Act
       const result = await productService.findAllProducts();
 
-      // Assert
       expect(prismaService.product.findMany).toHaveBeenCalledWith({
         include: expect.any(Object),
       });
@@ -268,10 +255,10 @@ describe('ProductService', () => {
     });
 
     it('should throw 500 for unexpected errors', async () => {
-      // Arrange
-      mockPrismaService.product.findMany.mockRejectedValue(new Error('Database error'));
+      mockPrismaService.product.findMany.mockRejectedValue(
+        new Error('Database error'),
+      );
 
-      // Act & Assert
       await expect(productService.findAllProducts()).rejects.toEqual(
         new CustomError(500, 'Unexpected error occurred'),
       );
@@ -316,16 +303,17 @@ describe('ProductService', () => {
     };
 
     it('should update a product successfully', async () => {
-      // Arrange
       mockPrismaService.product.findUnique.mockResolvedValue(mockProduct);
       mockPrismaService.store.findUnique.mockResolvedValue(mockStore);
       mockPrismaService.category.findUnique.mockResolvedValue(mockCategory);
       mockPrismaService.product.update.mockResolvedValue(mockUpdatedProduct);
 
-      // Act
-      const result = await productService.updateProduct(productId, productDto, userId);
+      const result = await productService.updateProduct(
+        productId,
+        productDto,
+        userId,
+      );
 
-      // Assert
       expect(prismaService.product.findUnique).toHaveBeenCalledWith({
         where: { id: productId },
       });
@@ -353,21 +341,18 @@ describe('ProductService', () => {
     });
 
     it('should throw 400 if ID is missing', async () => {
-      // Act & Assert
-      await expect(productService.updateProduct('', productDto, userId)).rejects.toEqual(
-        new CustomError(400, 'Product ID is required'),
-      );
+      await expect(
+        productService.updateProduct('', productDto, userId),
+      ).rejects.toEqual(new CustomError(400, 'Product ID is required'));
       expect(prismaService.product.findUnique).not.toHaveBeenCalled();
     });
 
     it('should throw 404 if product is not found', async () => {
-      // Arrange
       mockPrismaService.product.findUnique.mockResolvedValue(null);
 
-      // Act & Assert
-      await expect(productService.updateProduct(productId, productDto, userId)).rejects.toEqual(
-        new CustomError(404, 'Product not found'),
-      );
+      await expect(
+        productService.updateProduct(productId, productDto, userId),
+      ).rejects.toEqual(new CustomError(404, 'Product not found'));
       expect(prismaService.product.findUnique).toHaveBeenCalledWith({
         where: { id: productId },
       });
@@ -375,17 +360,15 @@ describe('ProductService', () => {
     });
 
     it('should throw 403 if user does not own the product’s store', async () => {
-      // Arrange
       mockPrismaService.product.findUnique.mockResolvedValue(mockProduct);
       mockPrismaService.store.findUnique.mockResolvedValue({
         ...mockStore,
         ownerId: 'other-user-id',
       });
 
-      // Act & Assert
-      await expect(productService.updateProduct(productId, productDto, userId)).rejects.toEqual(
-        new CustomError(403, 'You do not own this product'),
-      );
+      await expect(
+        productService.updateProduct(productId, productDto, userId),
+      ).rejects.toEqual(new CustomError(403, 'You do not own this product'));
       expect(prismaService.product.findUnique).toHaveBeenCalledWith({
         where: { id: productId },
       });
@@ -396,15 +379,13 @@ describe('ProductService', () => {
     });
 
     it('should throw 404 if category is not found', async () => {
-      // Arrange
       mockPrismaService.product.findUnique.mockResolvedValue(mockProduct);
       mockPrismaService.store.findUnique.mockResolvedValue(mockStore);
       mockPrismaService.category.findUnique.mockResolvedValue(null);
 
-      // Act & Assert
-      await expect(productService.updateProduct(productId, productDto, userId)).rejects.toEqual(
-        new CustomError(404, 'Category not found'),
-      );
+      await expect(
+        productService.updateProduct(productId, productDto, userId),
+      ).rejects.toEqual(new CustomError(404, 'Category not found'));
       expect(prismaService.product.findUnique).toHaveBeenCalledWith({
         where: { id: productId },
       });
@@ -415,15 +396,15 @@ describe('ProductService', () => {
     });
 
     it('should throw 404 if new store is not found', async () => {
-      // Arrange
       mockPrismaService.product.findUnique.mockResolvedValue(mockProduct);
-      mockPrismaService.store.findUnique.mockResolvedValueOnce(mockStore).mockResolvedValueOnce(null);
+      mockPrismaService.store.findUnique
+        .mockResolvedValueOnce(mockStore)
+        .mockResolvedValueOnce(null);
       mockPrismaService.category.findUnique.mockResolvedValue(mockCategory);
 
-      // Act & Assert
-      await expect(productService.updateProduct(productId, productDto, userId)).rejects.toEqual(
-        new CustomError(404, 'Store not found'),
-      );
+      await expect(
+        productService.updateProduct(productId, productDto, userId),
+      ).rejects.toEqual(new CustomError(404, 'Store not found'));
       expect(prismaService.product.findUnique).toHaveBeenCalledWith({
         where: { id: productId },
       });
@@ -434,17 +415,15 @@ describe('ProductService', () => {
     });
 
     it('should throw 403 if user does not own the new store', async () => {
-      // Arrange
       mockPrismaService.product.findUnique.mockResolvedValue(mockProduct);
       mockPrismaService.store.findUnique
         .mockResolvedValueOnce(mockStore)
         .mockResolvedValueOnce({ ...mockStore, ownerId: 'other-user-id' });
       mockPrismaService.category.findUnique.mockResolvedValue(mockCategory);
 
-      // Act & Assert
-      await expect(productService.updateProduct(productId, productDto, userId)).rejects.toEqual(
-        new CustomError(403, 'You do not own this store'),
-      );
+      await expect(
+        productService.updateProduct(productId, productDto, userId),
+      ).rejects.toEqual(new CustomError(403, 'You do not own this store'));
       expect(prismaService.product.findUnique).toHaveBeenCalledWith({
         where: { id: productId },
       });
@@ -455,13 +434,13 @@ describe('ProductService', () => {
     });
 
     it('should throw 500 for unexpected errors', async () => {
-      // Arrange
-      mockPrismaService.product.findUnique.mockRejectedValue(new Error('Database error'));
-
-      // Act & Assert
-      await expect(productService.updateProduct(productId, productDto, userId)).rejects.toEqual(
-        new CustomError(500, 'Unexpected error occurred'),
+      mockPrismaService.product.findUnique.mockRejectedValue(
+        new Error('Database error'),
       );
+
+      await expect(
+        productService.updateProduct(productId, productDto, userId),
+      ).rejects.toEqual(new CustomError(500, 'Unexpected error occurred'));
       expect(prismaService.product.findUnique).toHaveBeenCalledWith({
         where: { id: productId },
       });
@@ -487,15 +466,12 @@ describe('ProductService', () => {
     const mockStore = { id: 'store-id-1', ownerId: userId };
 
     it('should delete a product successfully', async () => {
-      // Arrange
       mockPrismaService.product.findUnique.mockResolvedValue(mockProduct);
       mockPrismaService.store.findUnique.mockResolvedValue(mockStore);
       mockPrismaService.product.delete.mockResolvedValue(mockProduct);
 
-      // Act
       const result = await productService.deleteProduct(productId, userId);
 
-      // Assert
       expect(prismaService.product.findUnique).toHaveBeenCalledWith({
         where: { id: productId },
         include: {
@@ -516,7 +492,6 @@ describe('ProductService', () => {
     });
 
     it('should throw 400 if ID is missing', async () => {
-      // Act & Assert
       await expect(productService.deleteProduct('', userId)).rejects.toEqual(
         new CustomError(400, 'Product ID is required'),
       );
@@ -524,13 +499,11 @@ describe('ProductService', () => {
     });
 
     it('should throw 404 if product is not found', async () => {
-      // Arrange
       mockPrismaService.product.findUnique.mockResolvedValue(null);
 
-      // Act & Assert
-      await expect(productService.deleteProduct(productId, userId)).rejects.toEqual(
-        new CustomError(404, 'Product not found'),
-      );
+      await expect(
+        productService.deleteProduct(productId, userId),
+      ).rejects.toEqual(new CustomError(404, 'Product not found'));
       expect(prismaService.product.findUnique).toHaveBeenCalledWith({
         where: { id: productId },
         include: expect.any(Object),
@@ -539,17 +512,15 @@ describe('ProductService', () => {
     });
 
     it('should throw 403 if user does not own the product’s store', async () => {
-      // Arrange
       mockPrismaService.product.findUnique.mockResolvedValue(mockProduct);
       mockPrismaService.store.findUnique.mockResolvedValue({
         ...mockStore,
         ownerId: 'other-user-id',
       });
 
-      // Act & Assert
-      await expect(productService.deleteProduct(productId, userId)).rejects.toEqual(
-        new CustomError(403, 'You do not own this product'),
-      );
+      await expect(
+        productService.deleteProduct(productId, userId),
+      ).rejects.toEqual(new CustomError(403, 'You do not own this product'));
       expect(prismaService.product.findUnique).toHaveBeenCalledWith({
         where: { id: productId },
         include: expect.any(Object),
@@ -561,16 +532,19 @@ describe('ProductService', () => {
     });
 
     it('should throw 400 if product has associated order items', async () => {
-      // Arrange
       mockPrismaService.product.findUnique.mockResolvedValue({
         ...mockProduct,
         orderItems: [{ id: 'order-item-id-1' }],
       });
       mockPrismaService.store.findUnique.mockResolvedValue(mockStore);
 
-      // Act & Assert
-      await expect(productService.deleteProduct(productId, userId)).rejects.toEqual(
-        new CustomError(400, 'Cannot delete product with associated order items'),
+      await expect(
+        productService.deleteProduct(productId, userId),
+      ).rejects.toEqual(
+        new CustomError(
+          400,
+          'Cannot delete product with associated order items',
+        ),
       );
       expect(prismaService.product.findUnique).toHaveBeenCalledWith({
         where: { id: productId },
@@ -583,15 +557,15 @@ describe('ProductService', () => {
     });
 
     it('should throw 400 if product has associated reviews', async () => {
-      // Arrange
       mockPrismaService.product.findUnique.mockResolvedValue({
         ...mockProduct,
         reviews: [{ id: 'review-id-1' }],
       });
       mockPrismaService.store.findUnique.mockResolvedValue(mockStore);
 
-      // Act & Assert
-      await expect(productService.deleteProduct(productId, userId)).rejects.toEqual(
+      await expect(
+        productService.deleteProduct(productId, userId),
+      ).rejects.toEqual(
         new CustomError(400, 'Cannot delete product with associated reviews'),
       );
       expect(prismaService.product.findUnique).toHaveBeenCalledWith({
@@ -605,13 +579,13 @@ describe('ProductService', () => {
     });
 
     it('should throw 500 for unexpected errors', async () => {
-      // Arrange
-      mockPrismaService.product.findUnique.mockRejectedValue(new Error('Database error'));
-
-      // Act & Assert
-      await expect(productService.deleteProduct(productId, userId)).rejects.toEqual(
-        new CustomError(500, 'Unexpected error occurred'),
+      mockPrismaService.product.findUnique.mockRejectedValue(
+        new Error('Database error'),
       );
+
+      await expect(
+        productService.deleteProduct(productId, userId),
+      ).rejects.toEqual(new CustomError(500, 'Unexpected error occurred'));
       expect(prismaService.product.findUnique).toHaveBeenCalledWith({
         where: { id: productId },
         include: expect.any(Object),
