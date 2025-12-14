@@ -138,22 +138,22 @@ You can use tools like **Postman**, **Insomnia**, or **cURL** to test the endpoi
 ---
 
 ## Ev used
-- PORT=5000
-- DATABASE_PORT=5432
-- POSTGRES_USER=postgres
-- POSTGRES_PASSWORD=postgres
-- POSTGRES_DB=market_api
-- DATABASE_URL=postgresql://postgres:postgres@localhost:5432/market_api
-- JWT_SECRET=market-api-secret
-- SENDGRID_API_KEY=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
-- KAFKA_BROKERS=kafka:9092
-- KAFKAJS_NO_PARTITIONER_WARNING=1
-- PRISMA_STUDIO_PORT=5555
-- postgresql://user:password@localhost:5432/db
+- PORT=
+- DATABASE_PORT=
+- POSTGRES_USER=
+- POSTGRES_PASSWORD=
+- POSTGRES_DB=
+- DATABASE_URL=
+- JWT_SECRET=
+- SENDGRID_API_KEY=
+- KAFKA_BROKERS=
+- KAFKAJS_NO_PARTITIONER_WARNING=
+- PRISMA_STUDIO_PORT=
+- postgresql:
 
 ## Admin credentials
-- email:tresorxavier16@gmail.com
-- password:Hello@123!
+- email:
+- password:
 
 ## Entity Relationships
 ## 🧩 Entity Relationship Diagram (ERD)
